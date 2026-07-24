@@ -64,14 +64,9 @@ git clone https://github.com/Thender2022/ByGrace.git
 cd bygrace
 
 # Install dependencies
-npm install
-# or
-bun install
-
+npm install or bun install
 # Set up environment variables
 cp .env.example .env.local
-# Edit .env.local with your Stripe credentials
-
 # Run development server
 npm run dev
 # or
