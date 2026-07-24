@@ -1,6 +1,6 @@
 # ByGrace
 
-A headless e-commerce store built with Next.js, Shopify, and Stripe integration.
+A custom e-commerce platform for skateboard products built with Next.js, featuring a headless architecture with a database backend.
 
 ## 🚀 Tech Stack
 
@@ -9,12 +9,11 @@ A headless e-commerce store built with Next.js, Shopify, and Stripe integration.
 - **Tailwind CSS** - Utility-first CSS framework
 - **TypeScript** - Type-safe JavaScript
 
-### E-Commerce
-- **Shopify Storefront API** - Headless commerce backend
-- **Shopify GraphQL** - Data fetching and product management
-
-### Payment Processing
-- **Stripe** - Payment processing and subscription billing
+### Backend & Services
+- **Custom E-Commerce Engine** - Built from scratch with Next.js API routes
+- **Database** - PostgreSQL (or your database choice) - Product and customer data storage
+- **Stripe** - Payment processing
+- **Email Service** - Order confirmations and notifications
 
 ### Deployment
 - **Vercel** (Recommended) - Hosting and automatic deployments
@@ -23,19 +22,42 @@ A headless e-commerce store built with Next.js, Shopify, and Stripe integration.
 
 ### Current Implementation
 - ✅ Product pages with ISR (Incremental Static Regeneration)
-- ✅ Shopify webhook integration for automatic product updates
-- ✅ Tag-based revalidation for instant cache busting
+- ✅ Custom product management system
+- ✅ Stripe payment integration
 - ✅ Add to cart functionality
+- ✅ Checkout process
+- ✅ Order management
 - ✅ Environment variable configuration
-- ✅ Type-safe GraphQL queries
+- ✅ Type-safe API routes
 
-### In Progress
-- ⏳ Stripe payment integration
-- ⏳ Subscription billing automation
-- ⏳ Customer notifications
+### Coming Soon
+- ⏳ Database integration (PostgreSQL)
+- ⏳ Customer authentication
+- ⏳ Order history
+- ⏳ Admin dashboard
+- ⏳ Inventory management
+- ⏳ Email notifications for orders
 
 ## 📦 Project Structure
 
+
+## 🛒 E-Commerce Flow
+- Browse Products: Customers view skateboard products
+- Add to Cart: Products are added to shopping cart
+- Checkout: Customer enters shipping and payment information
+- Payment: Stripe processes the payment securely
+- Order Confirmation: Customer receives order confirmation
+
+## 🗺️ Roadmap
+- PostgreSQL database integration
+- Customer authentication (Clerk or NextAuth)
+- Order history for customers
+- Admin dashboard for store management
+- Inventory management
+- Email notifications (order confirmations, shipping updates)
+- Product categories and filtering
+- Search functionality
+- Reviews and ratings
 
 # Clone the repository
 git clone https://github.com/Thender2022/ByGrace.git
@@ -45,6 +67,10 @@ cd bygrace
 npm install
 # or
 bun install
+
+# Set up environment variables
+cp .env.example .env.local
+# Edit .env.local with your Stripe credentials
 
 # Run development server
 npm run dev
