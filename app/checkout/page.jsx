@@ -29,14 +29,50 @@ export default function CheckoutPage() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsProcessing(true);
-    
-    setTimeout(() => {
+
+    try {
+      // Create checkout session
+      const response = await fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          items: cartItems.map((item) => ({
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            size: item.selectedSize,
+            color: item.selectedColor,
+          })),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('API Error:', errorData);
+        throw new Error(errorData.error || 'Failed to create checkout session');
+      }
+
+      const data = await response.json();
+      console.log('Session created:', data);
+
+      // ✅ FIX: Check for url instead of sessionId
+      if (!data.url) {
+        throw new Error('No checkout URL returned from API');
+      }
+
+      // Redirect to Stripe Checkout
+      window.location.href = data.url;
+    } catch (error) {
+      console.error('Error:', error);
+      alert(error.message || 'Something went wrong. Please try again.');
       setIsProcessing(false);
-      router.push('/order-confirmation');
-    }, 1500);
+    }
   };
 
   // Redirect if cart is empty
