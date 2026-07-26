@@ -1,5 +1,4 @@
-# ByGrace Skateboards
-### www.bygraceskate.com
+# ByGrace Skateboards                ### www.bygraceskate.com
 
 A custom e-commerce platform for skateboard products built with Next.js, featuring a headless architecture with a database backend.
 
