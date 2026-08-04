@@ -14,7 +14,7 @@ export default function Navbar() {
           <Link href="/" className="flex items-center gap-2">
             <span className="text-gold-500 text-xl">✦</span>
             <span className="font-light tracking-[0.2em] text-gray-900 uppercase text-sm">
-              Skate Shop
+              By Grace
             </span>
             <span className="text-gold-500 text-xl">✦</span>
           </Link>
@@ -31,13 +31,19 @@ export default function Navbar() {
               href="/products"
               className="text-sm text-gray-500 hover:text-gray-900 transition-colors font-light tracking-wider"
             >
-              Collection
+              Merch
             </Link>
             <Link
               href="/content"
               className="text-sm text-gray-500 hover:text-gray-900 transition-colors font-light tracking-wider"
             >
               Content
+            </Link>
+            <Link
+              href="/content"
+              className="text-sm text-gray-500 hover:text-gray-900 transition-colors font-light tracking-wider"
+            >
+              Updates
             </Link>
             
             {/* Cart Icon */}

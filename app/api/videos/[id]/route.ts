@@ -1,98 +1,205 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
-const prisma = new PrismaClient();
+// GET - Fetch single video
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: videoId } = await params;
+    
+    console.log("📹 GET - Fetching video with ID:", videoId);
 
-// PUT - update video
+    if (!videoId) {
+      return NextResponse.json(
+        { error: "Video ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const video = await prisma.video.findUnique({
+      where: { id: videoId },
+      include: {
+        category: true,
+      },
+    });
+
+    if (!video) {
+      console.log("📹 Video not found with ID:", videoId);
+      return NextResponse.json(
+        { error: "Video not found" },
+        { status: 404 }
+      );
+    }
+
+    console.log("📹 Video found:", video.title);
+    return NextResponse.json({ video });
+  } catch (error) {
+    console.error("📹 Error fetching video:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch video" },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT - Update a video
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { id: videoId } = await params;
+    
+    console.log("📹 PUT - Updating video with ID:", videoId);
+
+    if (!videoId) {
+      return NextResponse.json(
+        { error: "Video ID is required" },
+        { status: 400 }
+      );
+    }
+
     const body = await request.json();
-    const { title, description, youtubeId, categoryId, tags, isActive } = body;
+    const { title, category, youtubeId, description, tags, isActive } = body;
 
-    // ✅ If categoryId is empty string or invalid, set to null
-    const validCategoryId = categoryId && categoryId.trim() !== '' ? categoryId.trim() : null;
+    // Check if video exists
+    const existingVideo = await prisma.video.findUnique({
+      where: { id: videoId },
+    });
 
-    // ✅ Verify the category exists before updating (if a categoryId is provided)
-    if (validCategoryId) {
-      const existingCategory = await prisma.category.findUnique({
-        where: { id: validCategoryId },
+    if (!existingVideo) {
+      return NextResponse.json(
+        { error: "Video not found" },
+        { status: 404 }
+      );
+    }
+
+    // Check if another video has this YouTube ID
+    if (youtubeId && youtubeId !== existingVideo.youtubeId) {
+      const duplicateVideo = await prisma.video.findUnique({
+        where: { youtubeId },
       });
-      if (!existingCategory) {
+
+      if (duplicateVideo) {
         return NextResponse.json(
-          { error: 'Category not found' },
-          { status: 400 }
+          { error: "A video with this YouTube ID already exists." },
+          { status: 409 }
         );
       }
     }
 
+    // Handle category
+    let categoryId = null;
+    if (category) {
+      const categoryRecord = await prisma.category.upsert({
+        where: { name: category },
+        update: {},
+        create: {
+          name: category,
+          slug: category.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+          type: "VIDEO",
+        },
+      });
+      categoryId = categoryRecord.id;
+    }
+
+    // Generate thumbnail URL
+    const thumbnail = `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
+
     const video = await prisma.video.update({
-      where: { id },
+      where: { id: videoId },
       data: {
         title,
-        description: description || null,
         youtubeId,
-        categoryId: validCategoryId,
+        description: description || null,
+        categoryId,
         tags: tags || [],
-        thumbnail: `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`,
+        thumbnail,
         isActive: isActive !== undefined ? isActive : true,
+      },
+      include: {
+        category: true,
       },
     });
 
-    return NextResponse.json({ success: true, video });
+    console.log("📹 Video updated:", video.title);
+    return NextResponse.json({ video });
   } catch (error) {
-    console.error('PUT error:', error);
+    console.error("📹 Error updating video:", error);
     return NextResponse.json(
-      { error: 'Failed to update video' },
+      { error: "Failed to update video" },
       { status: 500 }
     );
   }
 }
 
-// PATCH - update video status
+// PATCH - Toggle active status
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { id: videoId } = await params;
+    
+    console.log("📹 PATCH - Updating video with ID:", videoId);
+
+    if (!videoId) {
+      return NextResponse.json(
+        { error: "Video ID is required" },
+        { status: 400 }
+      );
+    }
+
     const body = await request.json();
-    const { isActive } = body;
 
     const video = await prisma.video.update({
-      where: { id },
-      data: { isActive },
+      where: { id: videoId },
+      data: body,
+      include: {
+        category: true,
+      },
     });
 
-    return NextResponse.json({ success: true, video });
+    console.log("📹 Video patched:", video.title);
+    return NextResponse.json({ video });
   } catch (error) {
-    console.error('PATCH error:', error);
+    console.error("📹 Error updating video:", error);
     return NextResponse.json(
-      { error: 'Failed to update video' },
+      { error: "Failed to update video" },
       { status: 500 }
     );
   }
 }
 
-// DELETE - remove video
+// DELETE - Delete a video
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { id: videoId } = await params;
+    
+    console.log("📹 DELETE - Deleting video with ID:", videoId);
+
+    if (!videoId) {
+      return NextResponse.json(
+        { error: "Video ID is required" },
+        { status: 400 }
+      );
+    }
 
     await prisma.video.delete({
-      where: { id },
+      where: { id: videoId },
     });
+
+    console.log("📹 Video deleted:", videoId);
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('DELETE error:', error);
+    console.error("📹 Error deleting video:", error);
     return NextResponse.json(
-      { error: 'Failed to delete video' },
+      { error: "Failed to delete video" },
       { status: 500 }
     );
   }

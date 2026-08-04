@@ -44,7 +44,7 @@ export default function CartSidebar() {
         <div 
           className="flex-1 overflow-y-auto p-6 space-y-4" 
           style={{ 
-            height: 'calc(100% - 180px)',
+            height: 'calc(100% - 220px)',
           }}
         >
           {cartItems.length === 0 ? (
@@ -132,19 +132,19 @@ export default function CartSidebar() {
               </span>
             </div>
             
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3">
               <Link
                 href="/checkout"
-                className="flex-1 bg-gold-500 text-white text-center py-3.5 hover:bg-gold-400 transition-colors font-medium tracking-[0.2em] uppercase text-sm"
+                className="w-full bg-black text-white font-bold text-center py-4 hover:bg-gray-800 transition-colors tracking-[0.2em] uppercase text-sm rounded-md"
                 onClick={closeCart}
               >
-                Checkout
+                Continue to Checkout →
               </Link>
               <button
                 onClick={closeCart}
-                className="flex-1 border border-gray-300 text-gray-700 py-3.5 hover:border-gold-500 hover:text-gold-500 transition-all font-light tracking-wider text-sm uppercase"
+                className="w-full bg-gray-200 text-gray-800 font-medium py-4 hover:bg-gray-300 transition-colors tracking-wider text-sm uppercase rounded-md"
               >
-                Continue
+                Continue Shopping
               </button>
             </div>
           </div>

@@ -56,7 +56,7 @@ export default function AdminProducts() {
         p.name.toLowerCase().includes(term) ||
         (p.description?.toLowerCase().includes(term)) ||
         (p.category?.toLowerCase().includes(term)) ||
-        p.tags.some((t) => t.toLowerCase().includes(term))
+        (p.tags && p.tags.some((t) => t.toLowerCase().includes(term)))
       );
     }
     if (selectedCategory !== 'all') {
@@ -98,17 +98,37 @@ export default function AdminProducts() {
     };
   }, []); // Empty dependency array = run once on mount
 
+  // 🔍 DEBUG: Log product data to see structure
+  useEffect(() => {
+    console.log('📦 Products loaded:', products);
+    console.log('🔍 First product structure:', products[0]);
+    console.log('✅ Product IDs:', products.map(p => p.id));
+    console.log('📊 Total products count:', products.length);
+  }, [products]);
+
   // Refresh products function (used after create/update/delete)
   const refreshProducts = async () => {
+  try {
+    console.log('🔄 Refreshing products...');
     const res = await fetch('/api/products');
+    console.log('📡 Response status:', res.status);
     const data = await res.json();
+    console.log('📦 Response data:', data);
+    
     if (res.ok) {
       const list = data.products || [];
       setProducts(list);
       const cats = [...new Set(list.filter((p: Product) => p.category).map((p: Product) => p.category))];
       setCategories(cats as string[]);
+    } else {
+      console.error('❌ API error:', data);
+      setMessage({ text: `❌ API Error: ${data.error || 'Unknown error'}`, type: 'error' });
     }
-  };
+  } catch (err) {
+    console.error('❌ Network error:', err);
+    setMessage({ text: '❌ Network error. Please try again.', type: 'error' });
+  }
+};
 
   // Handle image files
   const handleImageFiles = (files: FileList) => {
@@ -183,6 +203,7 @@ export default function AdminProducts() {
 
   // Open edit form with product data
   const openEditForm = (product: Product) => {
+    console.log('✏️ Opening edit form for:', product.id, product.name);
     setEditingProduct(product);
     setForm({
       name: product.name,
@@ -190,7 +211,7 @@ export default function AdminProducts() {
       price: product.price,
       currency: product.currency,
       category: product.category || '',
-      tags: product.tags.join(', '),
+      tags: product.tags ? product.tags.join(', ') : '', // ✅ Fixed: check if tags exists
       inventoryCount: product.inventoryCount,
       isDigital: product.isDigital,
       images: product.images || [],
@@ -299,6 +320,7 @@ export default function AdminProducts() {
 
   // ✅ GOOD: Event handler for toggling status
   const toggleStatus = async (id: string, current: boolean) => {
+    console.log('🔄 Toggling status for:', id, 'Current:', current);
     const res = await fetch(`/api/products/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -307,16 +329,23 @@ export default function AdminProducts() {
     if (res.ok) {
       await refreshProducts();
       setMessage({ text: `✅ Product ${!current ? 'activated' : 'deactivated'}`, type: 'success' });
+    } else {
+      console.error('Failed to toggle status');
+      setMessage({ text: '❌ Failed to update status', type: 'error' });
     }
   };
 
   // ✅ GOOD: Event handler for deleting
   const deleteProduct = async (id: string) => {
+    console.log('🗑️ Deleting product:', id);
     if (!confirm('Delete this product?')) return;
     const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
     if (res.ok) {
       await refreshProducts();
       setMessage({ text: '✅ Product deleted', type: 'success' });
+    } else {
+      console.error('Failed to delete product');
+      setMessage({ text: '❌ Failed to delete product', type: 'error' });
     }
   };
 
@@ -716,7 +745,7 @@ export default function AdminProducts() {
                   {p.category && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">📂 {p.category}</span>}
                   <p className="text-xl font-bold mt-2">{p.currency.toUpperCase()} {p.price.toFixed(2)}</p>
                   <p className="text-sm text-gray-500">📦 Stock: {p.inventoryCount}</p>
-                  {p.tags?.length > 0 && (
+                  {p.tags && p.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
                       {p.tags.map((t, i) => (
                         <span key={i} className="text-xs bg-gray-200 px-2 py-0.5 rounded">🏷️ {t}</span>

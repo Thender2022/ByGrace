@@ -16,6 +16,8 @@ model Category {
   isActive    Boolean      @default(true)
   products    Product[]    @relation("ProductCategory")
   videos      Video[]      @relation("VideoCategory")
+  posts       Post[]       @relation("PostCategory")
+  images      Image[]      @relation("ImageCategory")
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -25,6 +27,46 @@ model Category {
 enum CategoryType {
   PRODUCT
   VIDEO
+  POST
+  IMAGE
+}
+
+model Post {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  content     String
+  excerpt     String?
+  categoryId  String?  @map("category_id")
+  category    Category? @relation("PostCategory", fields: [categoryId], references: [id])
+  tags        String[]
+  status      String   @default("Draft") // "Draft" | "Published"
+  featured    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("posts")
+  @@index([slug])
+  @@index([status])
+  @@index([featured])
+  @@index([createdAt])
+}
+
+model Image {
+  id          String       @id @default(cuid())
+  title       String
+  imageUrl    String
+  description String?
+  categoryId  String?      @map("category_id")
+  category    Category?    @relation("ImageCategory", fields: [categoryId], references: [id])
+  tags        String[]
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("images")
+  @@index([createdAt])
+  @@index([isActive])
 }
 
 model Product {
@@ -168,6 +210,22 @@ model Video {
   updatedAt   DateTime     @updatedAt
 
   @@map("videos")
+}
+
+model TeamMember {
+  id          String   @id @default(cuid())
+  name        String
+  role        String
+  quote       String?
+  image       String   @default("/team/placeholder.jpg")
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("team_members")
+  @@index([order])
+  @@index([isActive])
 }
 
 enum OrderStatus {
