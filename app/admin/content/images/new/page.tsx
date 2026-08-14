@@ -2,14 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function UploadImage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  
   const [formData, setFormData] = useState({
     title: "",
     category: "",
-    imageUrl: "",
     description: "",
     tags: "",
     isActive: true,
@@ -29,18 +32,53 @@ export default function UploadImage() {
     });
   };
 
+  // Handle file selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      // Create preview URL
+      const preview = URL.createObjectURL(file);
+      setPreviewUrl(preview);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
+      // Step 1: Upload the image file
+      let imageUrl = "";
+      
+      if (selectedFile) {
+        const uploadFormData = new FormData();
+        uploadFormData.append("file", selectedFile);
+        
+        const uploadRes = await fetch("/api/admin/images/upload", {
+          method: "POST",
+          body: uploadFormData,
+        });
+        
+        const uploadData = await uploadRes.json();
+        
+        if (!uploadRes.ok) {
+          throw new Error(uploadData.error || "Failed to upload image");
+        }
+        
+        imageUrl = uploadData.imageUrl;
+      } else {
+        throw new Error("Please select an image file");
+      }
+
+      // Step 2: Save the image metadata to the database
       const res = await fetch("/api/images", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: formData.title,
           category: formData.category || null,
-          imageUrl: formData.imageUrl,
+          imageUrl: imageUrl,
           description: formData.description || null,
           tags: formData.tags ? formData.tags.split(",").map((t) => t.trim()) : [],
           isActive: formData.isActive,
@@ -51,10 +89,10 @@ export default function UploadImage() {
         router.push("/admin/content/images");
       } else {
         const data = await res.json();
-        alert(data.error || "Failed to upload image");
+        alert(data.error || "Failed to save image metadata");
       }
     } catch (error) {
-      alert("Network error. Please try again.");
+      alert(error instanceof Error ? error.message : "Network error. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -89,22 +127,37 @@ export default function UploadImage() {
           />
         </div>
 
-        {/* Image URL */}
+        {/* File Upload */}
         <div>
           <label className="block text-xs font-light tracking-wider uppercase text-gray-500 mb-1.5">
-            Image URL *
+            Image File *
           </label>
           <input
-            type="url"
-            name="imageUrl"
-            value={formData.imageUrl}
-            onChange={handleChange}
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
             required
-            className="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:border-gold-500 focus:ring-1 focus:ring-gold-500 transition-all duration-200"
-            placeholder="https://example.com/image.jpg"
+            className="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:border-gold-500 focus:ring-1 focus:ring-gold-500 transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-gold-500 file:text-black file:hover:bg-gold-400 file:cursor-pointer"
           />
-          <p className="text-xs text-gray-400 mt-1">Enter a direct URL to your image (hosted on a CDN, cloud storage, etc.)</p>
+          <p className="text-xs text-gray-400 mt-1">Select an image from your computer (JPEG, PNG, WebP, GIF, SVG - max 5MB)</p>
         </div>
+
+        {/* Image Preview */}
+        {previewUrl && (
+          <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+            <p className="text-xs font-light tracking-wider uppercase text-gray-500 mb-2">Preview</p>
+            <div className="relative w-full max-h-64 overflow-hidden rounded">
+              <Image
+                src={previewUrl}
+                alt="Preview"
+                width={400}
+                height={400}
+                className="object-contain w-full h-auto max-h-64"
+              />
+            </div>
+            <p className="text-xs text-gray-400 mt-2">{selectedFile?.name} ({(selectedFile?.size && (selectedFile.size / 1024).toFixed(1))} KB)</p>
+          </div>
+        )}
 
         {/* Category */}
         <div>
@@ -168,7 +221,7 @@ export default function UploadImage() {
         <div className="flex gap-3 pt-4 border-t border-gray-200">
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !selectedFile}
             className="flex-1 bg-gold-500 border-2 border-gold-500 text-black px-8 py-2.5 hover:bg-gold-600 hover:border-gold-600 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 font-light tracking-[0.15em] uppercase text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? "Uploading..." : "Upload Image"}
