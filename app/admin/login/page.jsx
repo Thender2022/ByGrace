@@ -10,19 +10,34 @@ export default function AdminLoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
-    // Simple hardcoded admin credentials (for MVP only)
-    // In production, use proper authentication
-    if (email === 'admin@skateshop.com' && password === 'admin123') {
-      // Set a session flag in localStorage
-      localStorage.setItem('isAdmin', 'true');
-      router.push('/admin/dashboard');
-    } else {
-      setError('Invalid email or password');
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        // Store user data in localStorage
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('isAdmin', String(data.isAdmin));
+        localStorage.setItem('userRole', data.user.role);
+        
+        // Redirect to admin dashboard
+        router.push('/admin');
+      } else {
+        setError(data.error || 'Invalid email or password');
+        setIsLoading(false);
+      }
+    } catch (error) {
+      setError('Network error. Please try again.');
       setIsLoading(false);
     }
   };
@@ -86,10 +101,6 @@ export default function AdminLoginPage() {
             </span>
           </button>
         </form>
-
-        <p className="text-center text-xs text-gray-400 font-light mt-6">
-          Default: admin@skateshop.com / admin123
-        </p>
       </div>
     </div>
   );

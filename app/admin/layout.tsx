@@ -1,14 +1,68 @@
 "use client";
 
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isContentOpen, setIsContentOpen] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/');
+
+  // Check authentication on mount
+  useEffect(() => {
+    const checkAuth = () => {
+      const user = localStorage.getItem("user");
+      const isAdmin = localStorage.getItem("isAdmin");
+      
+      // If on login page, don't redirect
+      if (pathname === "/admin/login") {
+        setIsLoading(false);
+        return;
+      }
+      
+      if (!user || !isAdmin || isAdmin !== "true") {
+        // Not authenticated, redirect to login
+        router.push("/admin/login");
+        return;
+      }
+
+      setIsAuthenticated(true);
+      setIsLoading(false);
+    };
+
+    checkAuth();
+  }, [router, pathname]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("isAdmin");
+    localStorage.removeItem("userRole");
+    router.push("/admin/login");
+  };
+
+  // If on login page, just render children without sidebar
+  if (pathname === "/admin/login") {
+    return <>{children}</>;
+  }
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-gray-500 font-light">Loading...</div>
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -62,7 +116,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             {isContentOpen && (
               <div className="mt-1 space-y-1">
                 <Link
-                  href="/admin/content/images"
+                  href="/admin/content/team"
                   className={`block px-4 py-2.5 text-sm rounded transition-colors pl-8 ${
                     isActive('/admin/content/images') ? 'bg-white/10' : 'hover:bg-white/10'
                   }`}
@@ -93,9 +147,25 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 >
                   🖼️ Images
                 </Link>
+                <Link
+                  href="/admin/content/hero"
+                  className={`block px-4 py-2.5 text-sm rounded transition-colors pl-8 ${
+                    isActive('/admin/content/images') ? 'bg-white/10' : 'hover:bg-white/10'
+                  }`}
+                >
+                  🔄 Slideshow
+                </Link>
               </div>
             )}
           </div>
+          
+          {/* Sign Out Button */}
+          <button
+            onClick={handleLogout}
+            className="w-full text-left px-4 py-3 text-sm text-red-400 hover:text-red-300 hover:bg-white/5 rounded transition-colors mt-4"
+          >
+            🚪 Sign Out
+          </button>
         </nav>
         
         <div className="pt-4 border-t border-white/10">

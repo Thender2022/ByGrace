@@ -38,7 +38,7 @@ export async function PUT(
   try {
     const { id } = await context.params;
     const body = await request.json();
-    const { name, role, quote, image, order, isActive } = body;
+    const { name, role, quote, image, order, isActive, showOnHomepage } = body;
 
     // Check if team member exists
     const existingMember = await prisma.teamMember.findUnique({
@@ -62,6 +62,7 @@ export async function PUT(
         image: image || existingMember.image,
         order: order !== undefined ? order : existingMember.order,
         isActive: isActive !== undefined ? isActive : existingMember.isActive,
+        showOnHomepage: showOnHomepage !== undefined ? showOnHomepage : existingMember.showOnHomepage,
       },
     });
 
