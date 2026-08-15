@@ -202,6 +202,22 @@ export default function HeroSlideshowManager() {
         </div>
       </div>
 
+      {/* Image Size Recommendation Banner */}
+      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="flex items-start gap-3">
+          <div className="text-blue-500 text-xl mt-0.5">ℹ️</div>
+          <div>
+            <h4 className="text-sm font-medium text-blue-800">Image Size Recommendation</h4>
+            <p className="text-sm text-blue-700 font-light mt-1">
+              For the best display in the hero slideshow, use images with a <strong>16:9 aspect ratio</strong> (1920×1080px recommended).
+            </p>
+            <p className="text-xs text-blue-600 font-light mt-1">
+              Images that are too small will appear pixelated. Images that are too large may be cropped awkwardly.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Message */}
       {message && (
         <div

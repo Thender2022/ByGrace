@@ -113,20 +113,22 @@ export default function HeroSection() {
   console.log('🖼️ Current image URL:', currentImage.imageUrl);
 
   return (
-    <section className="relative h-[70vh] min-h-[500px] md:min-h-[600px] lg:h-[80vh] flex items-center justify-center overflow-hidden">
-      {/* Background Image with fade transition */}
+    <section className="relative h-[70vh] min-h-[500px] md:min-h-[600px] lg:h-[80vh] flex items-center justify-center overflow-hidden bg-black">
+      {/* Background Image with fade transition - Full width */}
       <div className="absolute inset-0 z-0 transition-opacity duration-1000 ease-in-out">
-        <Image
-          src={currentImage.imageUrl}
-          alt={currentImage.altText || 'ByGrace Skate Team'}
-          fill
-          className="object-cover"
-          priority
-          onError={(e) => {
-            console.error('❌ Image failed to load:', currentImage.imageUrl);
-            // Optionally show a fallback
-          }}
-        />
+        <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+          <Image
+            src={currentImage.imageUrl}
+            alt={currentImage.altText || 'ByGrace Skate Team'}
+            width={1920}
+            height={1080}
+            className="w-full h-auto max-h-full object-cover object-center"
+            priority
+            onError={(e) => {
+              console.error('❌ Image failed to load:', currentImage.imageUrl);
+            }}
+          />
+        </div>
         <div className="absolute inset-0 bg-black/50 md:bg-black/40" />
       </div>
       
