@@ -4,7 +4,7 @@ export default function Footer() {
   return (
     <footer className="border-t border-gray-200 bg-white mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
           {/* Benefits */}
           <div>
             <h4 className="text-xs font-light tracking-[0.2em] text-gray-900 uppercase mb-3">
@@ -25,7 +25,7 @@ export default function Footer() {
             <h4 className="text-xs font-light tracking-[0.2em] text-gray-900 uppercase mb-3">
               Follow Us
             </h4>
-            <div className="space-y-2">
+            <div className="space-y-2 flex flex-col items-center md:items-start">
               <a
                 href="https://instagram.com"
                 target="_blank"
@@ -51,7 +51,7 @@ export default function Footer() {
               Contact
             </h4>
             <p className="text-gray-500 font-light text-sm">
-              support@skateshop.com
+              Vitorskate1@gmail.com
             </p>
           </div>
         </div>

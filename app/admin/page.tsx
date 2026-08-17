@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -10,6 +11,7 @@ export default function AdminDashboard() {
     revenue: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -43,10 +45,36 @@ export default function AdminDashboard() {
     };
   }, []);
 
+  const quickActions = [
+    { label: '+ Add Product', href: '/admin/products/new', style: 'bg-gold-500 text-black hover:bg-gold-400' },
+    { label: '+ Add Video', href: '/admin/videos/new', style: 'bg-black text-white hover:bg-gray-800' },
+    { label: 'View Orders', href: '/admin/orders', style: 'border border-gray-300 text-gray-700 hover:border-gold-500 hover:text-gold-500' },
+  ];
+
   return (
     <div>
-      <h1 className="text-2xl font-light tracking-[0.2em] uppercase mb-6">Dashboard</h1>
-      
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-light tracking-[0.2em] uppercase">Dashboard</h1>
+
+        {/* Mobile Dropdown Button */}
+        <div className="md:hidden">
+          <button
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="px-4 py-2 border border-gray-200 rounded-lg bg-white hover:border-gold-500 transition-colors text-sm font-light tracking-wider flex items-center gap-2"
+          >
+            <span>Quick Actions</span>
+            <svg
+              className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
@@ -74,29 +102,36 @@ export default function AdminDashboard() {
           </p>
         </div>
       </div>
-      
-      {/* Quick Actions */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+
+      {/* Mobile Dropdown Menu */}
+      {isDropdownOpen && (
+        <div className="md:hidden mb-6 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+          {quickActions.map((action, index) => (
+            <Link
+              key={index}
+              href={action.href}
+              className={`block p-4 text-center transition-colors border-b border-gray-100 last:border-b-0 ${action.style}`}
+              onClick={() => setIsDropdownOpen(false)}
+            >
+              {action.label}
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {/* Desktop Quick Actions */}
+      <div className="hidden md:block bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <h2 className="text-lg font-light tracking-[0.15em] uppercase mb-4">Quick Actions</h2>
         <div className="flex flex-wrap gap-3">
-          <a
-            href="/admin/products/new"
-            className="bg-gold-500 text-black px-6 py-2 hover:bg-gold-400 transition-colors text-sm font-light"
-          >
-            + Add Product
-          </a>
-          <a
-            href="/admin/videos/new"
-            className="bg-black text-white px-6 py-2 hover:bg-gray-800 transition-colors text-sm font-light"
-          >
-            + Add Video
-          </a>
-          <a
-            href="/admin/orders"
-            className="border border-gray-300 text-gray-700 px-6 py-2 hover:border-gold-500 hover:text-gold-500 transition-colors text-sm font-light"
-          >
-            View Orders
-          </a>
+          {quickActions.map((action, index) => (
+            <Link
+              key={index}
+              href={action.href}
+              className={`px-6 py-2 transition-colors text-sm font-light ${action.style}`}
+            >
+              {action.label}
+            </Link>
+          ))}
         </div>
       </div>
     </div>

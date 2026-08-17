@@ -42,7 +42,7 @@ export default function HeroSlideshowManager() {
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewIndex, setPreviewIndex] = useState(0);
-  const MAX_SLIDES = 5; // Hard limit
+  const MAX_SLIDES = 10; // Hard limit
 
   // Load images on mount
   useEffect(() => {

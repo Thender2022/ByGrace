@@ -3,6 +3,12 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import Image from 'next/image';
 
+type Category = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
 type Product = {
   id: string;
   name: string;
@@ -10,7 +16,7 @@ type Product = {
   price: number;
   currency: string;
   images: string[];
-  category: string | null;
+  category: Category | null;
   tags: string[];
   inventoryCount: number;
   isDigital: boolean;
@@ -20,10 +26,10 @@ type Product = {
 
 export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categoryOptions, setCategoryOptions] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [categories, setCategories] = useState<string[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -47,7 +53,7 @@ export default function AdminProducts() {
   const fileInput = useRef<HTMLInputElement>(null);
   const dragCounter = useRef(0);
 
-  // ✅ GOOD: Calculate filtered products during rendering with useMemo
+  // ✅ Filtered products with useMemo
   const filteredProducts = useMemo(() => {
     let list = products;
     if (searchTerm) {
@@ -55,34 +61,41 @@ export default function AdminProducts() {
       list = list.filter((p) =>
         p.name.toLowerCase().includes(term) ||
         (p.description?.toLowerCase().includes(term)) ||
-        (p.category?.toLowerCase().includes(term)) ||
+        (p.category?.name?.toLowerCase().includes(term)) ||
         (p.tags && p.tags.some((t) => t.toLowerCase().includes(term)))
       );
     }
     if (selectedCategory !== 'all') {
-      list = list.filter((p) => p.category === selectedCategory);
+      list = list.filter((p) => p.category?.id === selectedCategory);
     }
     return list;
   }, [products, searchTerm, selectedCategory]);
 
-  // ✅ GOOD: Fetch products - this is an effect because it syncs with an external system (the API)
+  // ✅ Fetch products and categories
   useEffect(() => {
     let ignore = false;
     
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const res = await fetch('/api/products');
-        const data = await res.json();
-        if (!ignore && res.ok) {
-          const list = data.products || [];
-          setProducts(list);
-          // Extract unique categories
-          const cats = [...new Set(list.filter((p: Product) => p.category).map((p: Product) => p.category))];
-          setCategories(cats as string[]);
+        
+        // Fetch products
+        const productRes = await fetch('/api/products');
+        const productData = await productRes.json();
+        
+        if (!ignore && productRes.ok) {
+          setProducts(productData.products || []);
+        }
+        
+        // Fetch categories (only PRODUCT type)
+        const categoryRes = await fetch('/api/categories?type=PRODUCT');
+        const categoryData = await categoryRes.json();
+        
+        if (!ignore && categoryRes.ok) {
+          setCategoryOptions(categoryData.categories || []);
         }
       } catch (err) {
-        console.error(err);
+        console.error('Error fetching data:', err);
       } finally {
         if (!ignore) {
           setLoading(false);
@@ -90,45 +103,26 @@ export default function AdminProducts() {
       }
     };
 
-    fetchProducts();
+    fetchData();
     
-    // ✅ GOOD: Cleanup to prevent race conditions
     return () => {
       ignore = true;
     };
-  }, []); // Empty dependency array = run once on mount
+  }, []);
 
-  // 🔍 DEBUG: Log product data to see structure
-  useEffect(() => {
-    console.log('📦 Products loaded:', products);
-    console.log('🔍 First product structure:', products[0]);
-    console.log('✅ Product IDs:', products.map(p => p.id));
-    console.log('📊 Total products count:', products.length);
-  }, [products]);
-
-  // Refresh products function (used after create/update/delete)
+  // Refresh products function
   const refreshProducts = async () => {
-  try {
-    console.log('🔄 Refreshing products...');
-    const res = await fetch('/api/products');
-    console.log('📡 Response status:', res.status);
-    const data = await res.json();
-    console.log('📦 Response data:', data);
-    
-    if (res.ok) {
-      const list = data.products || [];
-      setProducts(list);
-      const cats = [...new Set(list.filter((p: Product) => p.category).map((p: Product) => p.category))];
-      setCategories(cats as string[]);
-    } else {
-      console.error('❌ API error:', data);
-      setMessage({ text: `❌ API Error: ${data.error || 'Unknown error'}`, type: 'error' });
+    try {
+      const res = await fetch('/api/products');
+      const data = await res.json();
+      
+      if (res.ok) {
+        setProducts(data.products || []);
+      }
+    } catch (err) {
+      console.error('Error refreshing products:', err);
     }
-  } catch (err) {
-    console.error('❌ Network error:', err);
-    setMessage({ text: '❌ Network error. Please try again.', type: 'error' });
-  }
-};
+  };
 
   // Handle image files
   const handleImageFiles = (files: FileList) => {
@@ -203,15 +197,14 @@ export default function AdminProducts() {
 
   // Open edit form with product data
   const openEditForm = (product: Product) => {
-    console.log('✏️ Opening edit form for:', product.id, product.name);
     setEditingProduct(product);
     setForm({
       name: product.name,
       description: product.description || '',
       price: product.price,
       currency: product.currency,
-      category: product.category || '',
-      tags: product.tags ? product.tags.join(', ') : '', // ✅ Fixed: check if tags exists
+      category: product.category?.id || '',
+      tags: product.tags ? product.tags.join(', ') : '',
       inventoryCount: product.inventoryCount,
       isDigital: product.isDigital,
       images: product.images || [],
@@ -239,7 +232,7 @@ export default function AdminProducts() {
     setPreviews([]);
   };
 
-  // ✅ GOOD: Event handler for creating a product
+  // Submit create
   const submitCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -251,6 +244,7 @@ export default function AdminProducts() {
         tags: form.tags ? form.tags.split(',').map((t) => t.trim()) : [],
         price: parseFloat(form.price.toString()),
         inventoryCount: parseInt(form.inventoryCount.toString()),
+        category: form.category || null,
       };
 
       const res = await fetch('/api/products', {
@@ -276,7 +270,7 @@ export default function AdminProducts() {
     }
   };
 
-  // ✅ GOOD: Event handler for updating a product
+  // Submit update
   const submitUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProduct) return;
@@ -318,9 +312,8 @@ export default function AdminProducts() {
     }
   };
 
-  // ✅ GOOD: Event handler for toggling status
+  // Toggle status
   const toggleStatus = async (id: string, current: boolean) => {
-    console.log('🔄 Toggling status for:', id, 'Current:', current);
     const res = await fetch(`/api/products/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -330,21 +323,18 @@ export default function AdminProducts() {
       await refreshProducts();
       setMessage({ text: `✅ Product ${!current ? 'activated' : 'deactivated'}`, type: 'success' });
     } else {
-      console.error('Failed to toggle status');
       setMessage({ text: '❌ Failed to update status', type: 'error' });
     }
   };
 
-  // ✅ GOOD: Event handler for deleting
+  // Delete product
   const deleteProduct = async (id: string) => {
-    console.log('🗑️ Deleting product:', id);
     if (!confirm('Delete this product?')) return;
     const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
     if (res.ok) {
       await refreshProducts();
       setMessage({ text: '✅ Product deleted', type: 'success' });
     } else {
-      console.error('Failed to delete product');
       setMessage({ text: '❌ Failed to delete product', type: 'error' });
     }
   };
@@ -446,14 +436,19 @@ export default function AdminProducts() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Category</label>
-                <input
-                  type="text"
+                <select
                   name="category"
                   value={form.category}
                   onChange={handleChange}
-                  placeholder="e.g., Clothing, Electronics, Books"
                   className="w-full px-3 py-2 border rounded"
-                />
+                >
+                  <option value="">Select a category...</option>
+                  {categoryOptions.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Tags (comma separated)</label>
@@ -610,14 +605,19 @@ export default function AdminProducts() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Category</label>
-                  <input
-                    type="text"
+                  <select
                     name="category"
                     value={form.category}
                     onChange={handleChange}
-                    placeholder="e.g., Clothing, Electronics, Books"
                     className="w-full px-3 py-2 border rounded"
-                  />
+                  >
+                    <option value="">Select a category...</option>
+                    {categoryOptions.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Tags (comma separated)</label>
@@ -712,8 +712,8 @@ export default function AdminProducts() {
           <label className="block text-sm font-medium mb-1">📂 Filter by Category</label>
           <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="w-full px-4 py-2 border rounded">
             <option value="all">All Categories</option>
-            {categories.map((c) => (
-              <option key={c} value={c}>{c}</option>
+            {categoryOptions.map((cat) => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
             ))}
           </select>
         </div>
@@ -742,7 +742,7 @@ export default function AdminProducts() {
                 {/* Product Details */}
                 <div className="p-4">
                   <h3 className="font-semibold text-lg truncate">{p.name}</h3>
-                  {p.category && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">📂 {p.category}</span>}
+                  {p.category && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">📂 {p.category.name}</span>}
                   <p className="text-xl font-bold mt-2">{p.currency.toUpperCase()} {p.price.toFixed(2)}</p>
                   <p className="text-sm text-gray-500">📦 Stock: {p.inventoryCount}</p>
                   {p.tags && p.tags.length > 0 && (

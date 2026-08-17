@@ -2,6 +2,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 
 type TeamMember = {
@@ -21,6 +22,7 @@ export default function TeamSection() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [touchStartX, setTouchStartX] = useState(0);
   const [touchEndX, setTouchEndX] = useState(0);
+  const [isSwiping, setIsSwiping] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   
   const itemsPerPage = 3;
@@ -32,12 +34,11 @@ export default function TeamSection() {
         setError(null);
         const res = await fetch('/api/team');
         const data = await res.json();
-        console.log('📥 Team API response:', data); // Debug log
+        console.log('📥 Team API response:', data);
         
         if (res.ok) {
-          // Only show active members
           const activeMembers = data.teamMembers.filter((m: TeamMember) => m.isActive);
-          console.log('👥 Active members:', activeMembers); // Debug log
+          console.log('👥 Active members:', activeMembers);
           setMembers(activeMembers);
         } else {
           setError(data.error || 'Failed to load team members');
@@ -56,27 +57,35 @@ export default function TeamSection() {
   const totalPages = Math.ceil(members.length / itemsPerPage);
 
   const nextSlide = () => {
-    setCurrentIndex((prev) => (prev + 1) % totalPages);
+    setCurrentIndex((prev) => (prev + 1) % members.length);
   };
 
   const prevSlide = () => {
-    setCurrentIndex((prev) => (prev - 1 + totalPages) % totalPages);
+    setCurrentIndex((prev) => (prev - 1 + members.length) % members.length);
   };
 
   const goToSlide = (index: number) => {
     setCurrentIndex(index);
   };
 
-  // Touch handlers for swipe
+  // Touch handlers for swipe (mobile only)
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (window.innerWidth >= 768) return;
+    setIsSwiping(false);
     setTouchStartX(e.targetTouches[0].clientX);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
+    if (window.innerWidth >= 768) return;
     setTouchEndX(e.targetTouches[0].clientX);
+    // Detect if user is swiping
+    if (Math.abs(e.targetTouches[0].clientX - touchStartX) > 10) {
+      setIsSwiping(true);
+    }
   };
 
   const handleTouchEnd = () => {
+    if (window.innerWidth >= 768) return;
     if (touchStartX - touchEndX > 50) {
       nextSlide();
     }
@@ -85,11 +94,26 @@ export default function TeamSection() {
     }
     setTouchStartX(0);
     setTouchEndX(0);
+    // Reset swiping state after a delay
+    setTimeout(() => setIsSwiping(false), 100);
   };
 
-  // Get current page items
+  // Handle click on arrows
+  const handleArrowClick = (direction: 'prev' | 'next') => {
+    if (direction === 'next') {
+      nextSlide();
+    } else {
+      prevSlide();
+    }
+  };
+
+  // Get current page items for desktop
   const startIndex = currentIndex * itemsPerPage;
   const currentMembers = members.slice(startIndex, startIndex + itemsPerPage);
+  const allMembers = members;
+
+  // Mobile: Get single member for slideshow
+  const mobileMember = members[currentIndex % members.length];
 
   if (loading) {
     return (
@@ -143,22 +167,14 @@ export default function TeamSection() {
         </p>
       </div>
 
-      {/* Slideshow Container */}
-      <div 
-        ref={containerRef}
-        className="relative px-10 sm:px-12"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        {/* Team Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {currentMembers.map((member) => (
-            <div
-              key={member.id}
-              className="group bg-white border border-gray-100 hover:border-gold-500 transition-all duration-300 overflow-hidden"
-            >
-              {/* Image */}
+      {/* Desktop: Full Grid */}
+      <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        {allMembers.map((member) => (
+          <div
+            key={member.id}
+            className="group bg-white border border-gray-100 hover:border-gold-500 hover:shadow-lg transition-all duration-300 overflow-hidden"
+          >
+            <Link href="/team" className="block cursor-pointer">
               <div className="relative w-full bg-gray-100" style={{ paddingBottom: '100%' }}>
                 <Image
                   src={member.image || '/team/placeholder.jpg'}
@@ -167,56 +183,95 @@ export default function TeamSection() {
                   className="object-cover group-hover:scale-105 transition-transform duration-700"
                 />
               </div>
+            </Link>
 
-              {/* Info */}
-              <div className="p-6">
-                <h3 className="text-lg font-light tracking-wide text-black">
-                  {member.name}
-                </h3>
-                <p className="text-sm text-gray-500 font-light tracking-wider uppercase">
-                  {member.role}
-                </p>
-                {member.quote && (
-                  <div className="mt-3 pt-3 border-t border-gray-100">
-                    <p className="text-sm text-gray-600 font-light italic leading-relaxed">
-                      &ldquo;{member.quote}&rdquo;
-                    </p>
-                  </div>
-                )}
-              </div>
+            <div className="p-6">
+              <h3 className="text-lg font-light tracking-wide text-black">
+                {member.name}
+              </h3>
+              <p className="text-sm text-gray-500 font-light tracking-wider uppercase">
+                {member.role}
+              </p>
+              {member.quote && (
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <p className="text-sm text-gray-600 font-light italic leading-relaxed">
+                    &ldquo;{member.quote}&rdquo;
+                  </p>
+                </div>
+              )}
             </div>
-          ))}
+          </div>
+        ))}
+      </div>
+
+      {/* Mobile: Single Member Slideshow */}
+      <div 
+        ref={containerRef}
+        className="md:hidden relative max-w-xs mx-auto"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div className="bg-white border border-gray-100 hover:border-gold-500 hover:shadow-lg transition-all duration-300 overflow-hidden">
+          <Link href="/team" className="block cursor-pointer">
+            <div className="relative w-full bg-gray-100" style={{ paddingBottom: '100%' }}>
+              <Image
+                src={mobileMember.image || '/team/placeholder.jpg'}
+                alt={mobileMember.name}
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-700"
+              />
+            </div>
+          </Link>
+
+          <div className="p-6">
+            <h3 className="text-lg font-light tracking-wide text-black">
+              {mobileMember.name}
+            </h3>
+            <p className="text-sm text-gray-500 font-light tracking-wider uppercase">
+              {mobileMember.role}
+            </p>
+            {mobileMember.quote && (
+              <div className="mt-3 pt-3 border-t border-gray-100">
+                <p className="text-sm text-gray-600 font-light italic leading-relaxed">
+                  &ldquo;{mobileMember.quote}&rdquo;
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Navigation Arrows */}
-        {totalPages > 1 && (
+        {/* Mobile Navigation Arrows */}
+        {members.length > 1 && (
           <>
             <button
-              onClick={prevSlide}
-              className="absolute left-0 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gold-500 transition-colors duration-300 z-10"
+              onClick={() => handleArrowClick('prev')}
+              className="absolute left-[-30px] top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gold-500 transition-colors duration-300 z-10 bg-white rounded-full shadow-sm border border-gray-200"
               aria-label="Previous"
+              type="button"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
             <button
-              onClick={nextSlide}
-              className="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gold-500 transition-colors duration-300 z-10"
+              onClick={() => handleArrowClick('next')}
+              className="absolute right-[-30px] top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gold-500 transition-colors duration-300 z-10 bg-white rounded-full shadow-sm border border-gray-200"
               aria-label="Next"
+              type="button"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>
           </>
         )}
       </div>
 
-      {/* Dot Indicators */}
-      {totalPages > 1 && (
-        <div className="flex justify-center gap-2 mt-8">
-          {Array.from({ length: totalPages }).map((_, index) => (
+      {/* Mobile Dot Indicators */}
+      {members.length > 1 && (
+        <div className="md:hidden flex justify-center gap-2 mt-8">
+          {members.map((_, index) => (
             <button
               key={index}
               onClick={() => goToSlide(index)}
@@ -230,6 +285,16 @@ export default function TeamSection() {
           ))}
         </div>
       )}
+
+      {/* View All Button */}
+      <div className="text-center mt-12">
+        <Link
+          href="/team"
+          className="inline-block px-8 py-3 border border-black text-black hover:bg-black hover:text-white transition-all duration-300 font-light tracking-[0.15em] uppercase text-sm"
+        >
+          View All
+        </Link>
+      </div>
     </section>
   );
 }

@@ -5,13 +5,14 @@ A custom e-commerce platform for skateboard products built with Next.js, featuri
 ## 🚀 Tech Stack
 
 ### Frontend
-- **Next.js 14** (App Router) - React framework with ISR support
+- **Next.js 15** (App Router) - React framework with ISR support
 - **Tailwind CSS** - Utility-first CSS framework
 - **TypeScript** - Type-safe JavaScript
+- **Lucide React** - Icon library for UI components
 
 ### Backend & Services
 - **Custom E-Commerce Engine** - Built from scratch with Next.js API routes
-- **Database** - PostgreSQL (or your database choice) - Product and customer data storage
+- **Database** - PostgreSQL with Prisma ORM - Product and customer data storage
 - **Stripe** - Payment processing
 - **Email Service** - Order confirmations and notifications
 
@@ -20,7 +21,7 @@ A custom e-commerce platform for skateboard products built with Next.js, featuri
 
 ## ✨ Features
 
-### Current Implementation
+### Core E-Commerce
 - ✅ Product pages with ISR (Incremental Static Regeneration)
 - ✅ Custom product management system
 - ✅ Stripe payment integration
@@ -31,45 +32,39 @@ A custom e-commerce platform for skateboard products built with Next.js, featuri
 - ✅ Environment variable configuration
 - ✅ Type-safe API routes
 - ✅ Test mode support for development
+- ✅ Product categories and filtering
+- ✅ Size selection for products (Skateboards, Apparel, Hats)
 
-### Coming Soon
-- ⏳ Database integration (PostgreSQL)
-- ⏳ Customer authentication
-- ⏳ Order history
-- ⏳ Admin dashboard
-- ⏳ Inventory management
-- ⏳ Email notifications for orders
+### Content Management
+- ✅ Admin dashboard with analytics
+- ✅ Product management (Create, Read, Update, Delete)
+- ✅ Order management and tracking
+- ✅ Blog/Posts system with categories and tags
+- ✅ Team member management
+- ✅ Video management with YouTube integration
+- ✅ Image management with drag-and-drop upload
+- ✅ Hero slideshow management (up to 10 images)
+- ✅ Post status management (Draft/Published)
+- ✅ Featured posts for homepage
+- ✅ Admin user management with role-based access (Admin/Staff)
+
+### Frontend Features
+- ✅ Responsive hero slideshow with image rotation
+- ✅ Team member showcase with mobile swipe
+- ✅ Video gallery with featured video player
+- ✅ Blog/Updates page with post cards
+- ✅ Product collection with category rows
+- ✅ Mobile-optimized navigation and layout
+- ✅ Interactive product cards with hover effects
+- ✅ Category filtering on products page
+- ✅ Dynamic page titles and metadata
+
+### Admin Dashboard
+- ✅ Quick action buttons for common tasks
+- ✅ Stats overview (Products, Orders, Videos, Revenue)
+- ✅ Mobile-responsive admin navigation
+- ✅ Dropdown menus for content management
+- ✅ Sidebar navigation with collapsible sections
+- ✅ Form validation and error handling
 
 ## 📦 Project Structure
-
-
-## 🛒 E-Commerce Flow
-- Browse Products: Customers view skateboard products
-- Add to Cart: Products are added to shopping cart
-- Checkout: Customer enters shipping and payment information
-- Payment: Stripe processes the payment securely
-- Order Confirmation: Customer receives order confirmation
-
-## 🗺️ Roadmap
-- PostgreSQL database integration
-- Customer authentication (Clerk or NextAuth)
-- Order history for customers
-- Admin dashboard for store management
-- Inventory management
-- Email notifications (order confirmations, shipping updates)
-- Product categories and filtering
-- Search functionality
-- Reviews and ratings
-
-# Clone the repository
-git clone https://github.com/Thender2022/ByGrace.git
-cd bygrace
-
-# Install dependencies
-npm install or bun install
-# Set up environment variables
-cp .env.example .env.local
-# Run development server
-npm run dev
-# or
-bun dev
